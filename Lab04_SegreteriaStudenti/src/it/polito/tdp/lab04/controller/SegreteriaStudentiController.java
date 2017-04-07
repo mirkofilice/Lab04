@@ -17,7 +17,7 @@ import javafx.scene.control.TextField;
 public class SegreteriaStudentiController {
 
 	private Model model;
-	List<Corso> corsi = new LinkedList<Corso>();
+	List<Corso> listaCorsi = new LinkedList<Corso>();
 
 	@FXML
 	private ComboBox<Corso> comboCorso;
@@ -50,32 +50,109 @@ public class SegreteriaStudentiController {
 	private TextField txtCognome;
 
 	public void setModel(Model model) {
-
+		this.model=model;
+		listaCorsi.addAll(model.getListaCorsi());
+		listaCorsi.add(new Corso("",0,"",0));
+		comboCorso.getItems().addAll(listaCorsi);
 	}
 
 	@FXML
 	void doReset(ActionEvent event) {
-
+		comboCorso.getSelectionModel().clearSelection();
+		txtMatricola.clear();
+		txtNome.clear();
+		txtCognome.clear();
+		txtResult.clear();
 	}
 
 	@FXML
 	void doCercaNome(ActionEvent event) {
-
+		
+		String mat=txtMatricola.getText();
+		if(mat.matches("[0-9]*") && mat.trim().length()==6){
+			
+			int matricola=Integer.parseInt(mat);
+			Studente s=model.trovaStudente(matricola);
+			if (s!=null ){
+			txtNome.setText(s.getNome());
+			txtCognome.setText(s.getCognome());
+			}
+			else {
+				txtResult.setText("Errore! La matricola inserita non è presente nel DB!");
+				return;
+			}
+		}
+		else {
+			txtResult.setText("Errore! Il campo matricola non può contenere caratteri, e la dim deve essere 6!");
+			return;
+		}
+		
 	}
 
 	@FXML
 	void doCercaIscrittiCorso(ActionEvent event) {
 
+		Corso corso=comboCorso.getValue();
+		List<Studente>iscritti=new LinkedList<Studente>(model.cercaIscritti(corso));
+		if (iscritti.isEmpty()){
+			txtResult.setText("Questo corso non ha iscritti");
+		}
+		else{
+			String s="";
+			for (Studente st:iscritti){
+				s+=st+"\n";
+			}
+			txtResult.setText(s);
+		}
+		
+		
 	}
 
 	@FXML
 	void doCercaCorsi(ActionEvent event) {
-
+		
+		String mat=txtMatricola.getText();
+		if(mat.matches("[0-9]*") && mat.trim().length()==6){
+			
+			int matricola=Integer.parseInt(mat);
+			List <Corso> corsi= new LinkedList<Corso>(model.corsiStudente(matricola));
+			if(corsi.isEmpty()){
+				txtResult.setText("Questo studente non è iscritto ad alcun corso");
+			}
+			else{
+				String s="";
+				for(Corso co:corsi){
+					s+=co.descriviCorso()+"\n";	
+				}
+				txtResult.setText(s);
+			}					
+		}
+		else {
+			txtResult.setText("Errore! Il campo matricola non può contenere caratteri, e la dim deve essere 6!");
+			return;
+		}
+		
 	}
-
+		
 	@FXML
 	void doIscrivi(ActionEvent event) {
 
+		Corso c=comboCorso.getValue();
+		Studente s=new Studente(Integer.parseInt(txtMatricola.getText()), txtNome.getText(), txtCognome.getText(), "");
+		if(model.iscritto(s, c)==true){
+			txtResult.setText("Studente gia' iscritto a questo corso");
+		}
+		else{
+			boolean flag=model.iscrivi(s, c);
+			if (flag==true){
+				txtResult.setText("Studente iscritto correttamente a questo corso");
+			}
+			else{
+				txtResult.setText("Iscrizione non andata a buon fine");
+				return;
+			}
+		}
+		
 	}
 
 	@FXML
